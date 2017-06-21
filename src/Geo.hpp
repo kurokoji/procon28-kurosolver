@@ -14,8 +14,6 @@ namespace bg = boost::geometry;
 namespace procon28 {
 using Point = bg::model::d2::point_xy<long double>;
 using Polygon = bg::model::polygon<Point>;
-using Hole = Polygon;
-using Piece = Polygon;
 using Segment = bg::model::segment<Point>;
 
 std::istream& operator>>(std::istream& is, Polygon& polygon);

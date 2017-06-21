@@ -2,7 +2,7 @@
 
 namespace procon28 {
 /* Polygonの入力 */
-std::istream &operator>>(std::istream &is, Polygon &polygon) {
+std::istream& operator>>(std::istream& is, Polygon& polygon) {
   int N;
   is >> N;
   polygon.outer().clear();
@@ -18,13 +18,15 @@ std::istream &operator>>(std::istream &is, Polygon &polygon) {
 }
 /* Polygonの出力 */
 std::ostream& operator<<(std::ostream& os, Polygon& polygon) {
-  int N = polygon.outer().size();
+  int N = polygon.outer().size() - 1;
   os << N << '\n';
-  for (auto&& point : polygon.outer()) {
-    os << point.x() << " " << point.y() << '\n';
-  }
 
-  std::flush();
+  for (int i = 0; i < N; ++i) {
+    os << polygon.outer()[i].x() << " " << polygon.outer()[i].y() << '\n';
+  }
+  os << std::flush;
+
+  return os;
 }
 
 } // namespace procon28
