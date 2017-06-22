@@ -10,6 +10,10 @@ int main() {
   using std::cout;
   using std::endl;
 
+  // cin高速化
+  std::cin.tie(0);
+  std::ios::sync_with_stdio(false);
+
   std::vector<Hole> holes;
   std::vector<Piece> pieces;
   int holes_N, pieces_N;
