@@ -29,4 +29,29 @@ std::ostream& operator<<(std::ostream& os, Polygon& polygon) {
   return os;
 }
 
-} // namespace procon28
+Point get_point(const Ring& ring, int n) {
+  const size_t N = ring.size() - 1;
+  return ring[n % N];
+}
+
+Point get_point(const Polygon& poly, int n) {
+  return get_point(poly.outer(), n);
+}
+
+Segment get_segment(const Ring& ring, int a, int b) {
+  return Segment(ring[a], ring[b]);
+}
+
+Segment get_segment(const Polygon& poly, int a, int b) {
+  return get_segment(poly.outer(), a, b);
+}
+
+Segment get_segment(const Ring& ring, int n) {
+  const size_t N = ring.size() - 1;
+  return Segment(ring[n % N], ring[(n + 1) % N]);
+}
+
+Segment get_segment(const Polygon& poly, int n) {
+  return get_segment(poly.outer(), n);
+}
+}  // namespace procon28

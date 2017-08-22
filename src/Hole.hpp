@@ -1,4 +1,3 @@
-#pragma once
 #ifndef PROCON_28_HOLE_HPP
 #define PROCON_28_HOLE_HPP
 #include "Geo.hpp"

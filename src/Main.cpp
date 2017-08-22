@@ -1,7 +1,7 @@
-#include "Geo.hpp"
-#include "Piece.hpp"
-#include "Hole.hpp"
 #include <vector>
+#include "Geo.hpp"
+#include "Hole.hpp"
+#include "Piece.hpp"
 
 using namespace procon28;
 
