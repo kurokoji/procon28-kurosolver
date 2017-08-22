@@ -20,7 +20,7 @@ int main() {
 
   cin >> pieces_N;
   pieces.reserve(pieces_N);
-  for (int i = 0; i < pieces_N; ++i) {
+  for (size_t i = 0; i < pieces_N; ++i) {
     Piece piece;
     cin >> piece;
     pieces.emplace_back(piece);
@@ -28,12 +28,11 @@ int main() {
 
   cin >> holes_N;
   holes.reserve(holes_N);
-  for (int i = 0; i < holes_N; ++i) {
+  for (size_t i = 0; i < holes_N; ++i) {
     Hole hole;
     cin >> hole;
     holes.emplace_back(hole);
   }
-
 
   cout << pieces_N << endl;
   for (auto&& piece : pieces) cout << piece;
