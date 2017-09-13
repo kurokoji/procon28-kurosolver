@@ -40,6 +40,20 @@ bool Solver::canRotate(Piece& piece, const long double angle, const Point& org) 
   return true;
 }
 
+// 合同かどうか
+bool Solver::isCongruent(const Piece& lhs, const Piece& rhs) {
+  if (lhs.outer().size() != rhs.outer().size()) return false;
+  const size_t N = lhs.outer().size() - 1;
+  for (size_t i = 0; i < N; ++i) {
+    const Point p = rhs.outer().front() - lhs.outer()[i];
+    Polygon g = translate(lhs.poly, p);
+    bg::correct(g);
+    if (bg::equals(g, rhs.poly)) return true;
+  }
+
+  return false;
+}
+
 std::vector<Piece> Solver::makeRotatePieces(const Piece& piece) {
   namespace util = kuroutil;
   std::vector<Piece> ret;
@@ -72,10 +86,10 @@ std::vector<Piece> Solver::makeRotatePieces(const Piece& piece) {
           const Point& fr = piece.outer().front();
           res = translate(res, -fr.x(), -fr.y());
           // すでに同じ図形があったらpushしない
-          if (std::find_if(std::begin(ret), std::end(ret), [&res](const Piece& x) {
-                return bg::equals(x.poly, res.poly);
+          if (std::find_if(std::begin(ret), std::end(ret), [&](const Piece& x) {
+                return isCongruent(res, x);
               }) == std::end(ret)) {
-            ret.emplace_back(res);
+            ret.emplace_back(Piece(res.poly));
           }
         }
       }

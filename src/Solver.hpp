@@ -10,13 +10,13 @@
 namespace procon28 {
 const long double EPS = 1e-10;
 class Solver {
-//private:
-public:
+private:
   std::vector<Piece> pieces;
   std::vector<std::vector<Piece>> rotatePieces;
   Polygon frame;
   bool canRotate(Piece&, const long double, const Point&);
   bool eq(long double, long double);
+  bool isCongruent(const Piece&, const Piece&);
   long double round(long double);
   std::vector<Piece> makeRotatePieces(const Piece&);
 public:
