@@ -23,6 +23,9 @@ using InnerContainer = typename Polygon::inner_container_type;
 std::istream& operator>>(std::istream&, Polygon&);
 std::ostream& operator<<(std::ostream&, Polygon&);
 
+const Point operator+(const Point&, const Point&);
+const Point operator-(const Point&, const Point&);
+
 Point get_point(const Ring&, int);
 Point get_point(const Polygon&, int);
 Segment get_segment(const Ring&, int, int);

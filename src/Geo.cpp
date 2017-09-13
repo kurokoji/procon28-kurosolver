@@ -32,6 +32,14 @@ std::ostream& operator<<(std::ostream& os, Polygon& polygon) {
   return os;
 }
 
+const Point operator+(const Point& lhs, const Point& rhs) {
+  return Point(lhs.x() + rhs.x(), lhs.y() + rhs.y());
+}
+
+const Point operator-(const Point& lhs, const Point& rhs) {
+  return Point(lhs.x() - rhs.x(), lhs.y() - rhs.y());
+}
+
 Point get_point(const Ring& ring, int n) {
   const size_t N = ring.size() - 1;
   return ring[n % N];
