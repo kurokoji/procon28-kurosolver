@@ -57,4 +57,47 @@ Segment get_segment(const Ring& ring, int n) {
 Segment get_segment(const Polygon& poly, int n) {
   return get_segment(poly.outer(), n);
 }
+
+long double get_angle(const Segment& s) {
+  Point v = to_vec(s);
+  return atan2(v.y(), v.x());
+}
+
+Point to_vec(const Segment& s) {
+  return Point(s.second.x() - s.first.x(), s.second.y() - s.first.y());
+}
+
+Polygon to_frame(const std::vector<Polygon>& holes) {
+  bg::model::box<Point> box(Point(-20, -20), Point(120, 120));
+  Polygon ret;
+  bg::convert(box, ret);
+
+  for (auto&& hole : holes) {
+    ret.inners().emplace_back(hole.outer());
+  }
+  bg::correct(ret);
+  return ret;
+}
+
+Polygon translate(const Polygon& poly, Point_Type x, Point_Type y) {
+  trans::translate_transformer<Point_Type, 2, 2> tr(x, y);
+  Polygon ret;
+  bg::transform(poly, ret, tr);
+  return ret;
+}
+
+Polygon translate(const Polygon& poly, Point p) {
+  return translate(poly, p.x(), p.y());
+}
+
+Polygon rotate(const Polygon& poly, long double ang) {
+  trans::rotate_transformer<bg::radian, Point_Type, 2, 2> rotate(ang);
+  Polygon ret;
+  bg::transform(poly, ret, rotate);
+  return ret;
+}
+
+Polygon rotate(const Polygon& poly, long double ang, Point org) {
+  return rotate(translate(poly, -org.x(), -org.y()), ang);
+}
 }  // namespace procon28
