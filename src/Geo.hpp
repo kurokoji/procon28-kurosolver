@@ -19,6 +19,7 @@ using Polygon = bg::model::polygon<Point>;          // 図形
 using Segment = bg::model::segment<Point>;          // 線分
 using Ring = typename Polygon::ring_type;
 using InnerContainer = typename Polygon::inner_container_type;
+const long double EPS = 1e-10;
 
 std::istream& operator>>(std::istream&, Polygon&);
 std::ostream& operator<<(std::ostream&, Polygon&);
@@ -33,12 +34,16 @@ Segment get_segment(const Polygon&, int, int);
 Segment get_segment(const Ring&, int);
 Segment get_segment(const Polygon&, int);
 long double get_angle(const Segment&);
+long double get_angle(const Segment&, const Segment&);
+long double get_corner(const Ring&, int);
+long double get_corner(const Polygon&, int);
 Point to_vec(const Segment&);
 Polygon to_frame(const std::vector<Polygon>&);
 Polygon translate(const Polygon&, Point_Type, Point_Type);
 Polygon translate(const Polygon&, Point);
 Polygon rotate(const Polygon&, long double);
 Polygon rotate(const Polygon&, long double, Point);
+Polygon inverse(const Polygon&);
 
 }  // namespace procon28
 

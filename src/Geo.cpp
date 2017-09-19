@@ -1,4 +1,8 @@
 #include "Geo.hpp"
+#include <iostream>
+#include <algorithm>
+#include <vector>
+#include <cmath>
 
 namespace procon28 {
 /* Polygonの入力 */
@@ -6,7 +10,7 @@ std::istream& operator>>(std::istream& is, Polygon& polygon) {
   size_t N;
   is >> N;
   // outer()はpolygonの外側の頂点集合を返す
-  // inner()はpolygonの内側の頂点集合を返す
+  // inners()はpolygonの内側の頂点集合の集合(複数の穴)を返す
   polygon.outer().clear();
   polygon.outer().reserve(N);
   for (size_t i = 0; i < N; ++i) {
@@ -71,6 +75,28 @@ long double get_angle(const Segment& s) {
   return atan2(v.y(), v.x());
 }
 
+long double get_angle(const Segment& lhs, const Segment& rhs) {
+  return abs(get_angle(rhs) - get_angle(lhs));
+}
+
+long double get_corner(const Ring& ring, int n) {
+  const size_t N = ring.size() - 1;
+  const size_t x = n % N;
+
+  if (x == 0) {
+    const Segment a = get_segment(ring, 0);
+    const Segment b = get_segment(ring, N - 1);
+    return get_angle(a, b);
+  }
+  const Segment a = get_segment(ring, x - 1);
+  const Segment b = get_segment(ring, x);
+  return get_angle(a, b);
+}
+
+long double get_corner(const Polygon& poly, int n) {
+  return get_corner(poly.outer(), n);
+}
+
 Point to_vec(const Segment& s) {
   return Point(s.second.x() - s.first.x(), s.second.y() - s.first.y());
 }
@@ -107,5 +133,11 @@ Polygon rotate(const Polygon& poly, long double ang) {
 
 Polygon rotate(const Polygon& poly, long double ang, Point org) {
   return rotate(translate(poly, -org.x(), -org.y()), ang);
+}
+
+Polygon inverse(const Polygon& poly) {
+  Polygon ret = poly;
+  for (auto& p : ret.outer()) p = Point(-p.x(), p.y());
+  return ret;
 }
 }  // namespace procon28
