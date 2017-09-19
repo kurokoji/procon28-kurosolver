@@ -12,14 +12,14 @@ namespace procon28 {
 Solver::Solver() {}
 Solver::Solver(const std::vector<Piece>& pieces, const Polygon& frame)
     : pieces(pieces), frame(frame) {
-      auto v = makeRotatePieces(pieces[0]);
-      for (auto&& t : v) {
-        std::cout << t;
-      }
+  auto v = makeRotatePieces(pieces[0]);
+  for (auto&& t : v) {
+    std::cout << t;
+  }
 }
 
-void Solver::SolvePruned() {
-
+void Solver::SolveCorner() {
+  
 }
 
 bool Solver::canRotate(Piece& piece, const long double angle, const Point& org) {
@@ -41,7 +41,7 @@ bool Solver::canRotate(Piece& piece, const long double angle, const Point& org) 
 }
 
 // 合同かどうか
-bool Solver::isCongruent(const Piece& lhs, const Piece& rhs) {
+bool Solver::isCongruent(const Piece& lhs, const Piece& rhs) const {
   if (lhs.outer().size() != rhs.outer().size()) return false;
   const size_t N = lhs.outer().size() - 1;
   for (size_t i = 0; i < N; ++i) {
@@ -70,6 +70,7 @@ std::vector<Piece> Solver::makeRotatePieces(const Piece& piece) {
     const int MAX_X = std::floor(std::sqrt(len_sq));
 
     for (int x = 0; x <= MAX_X; ++x) {
+      // 平方数であれば使える
       if (util::is_perfect_square(len_sq - x * x)) {
         const int y = util::sqrt(len_sq - x * x);
         long double nowAngle;
@@ -81,15 +82,27 @@ std::vector<Piece> Solver::makeRotatePieces(const Piece& piece) {
         // どれだけ回転するか(radianで与えられる)
         const double distAngle = orgAngle - nowAngle;
         Piece res = piece;
-        if (canRotate(res, distAngle, piece.outer()[i])) {
+        if (canRotate(res, distAngle, res.outer()[i])) {
           // 同じ図形かどうかを判定するために0番目の座標に合わせる
-          const Point& fr = piece.outer().front();
+          const Point& fr = res.outer().front();
           res = translate(res, -fr.x(), -fr.y());
           // すでに同じ図形があったらpushしない
-          if (std::find_if(std::begin(ret), std::end(ret), [&](const Piece& x) {
-                return isCongruent(res, x);
-              }) == std::end(ret)) {
+          if (std::find_if(std::begin(ret), std::end(ret),
+                           [&](const Piece& x) { return isCongruent(res, x); }) == std::end(ret)) {
             ret.emplace_back(Piece(res.poly));
+          }
+        }
+        
+        Piece resInversed = inverse(piece);
+
+        if (canRotate(resInversed, distAngle, resInversed.outer()[i])) {
+          // 同じ図形かどうかを判定するために0番目の座標に合わせる
+          const Point& fr = resInversed.outer().front();
+          resInversed = translate(resInversed, -fr.x(), -fr.y());
+          // すでに同じ図形があったらpushしない
+          if (std::find_if(std::begin(ret), std::end(ret),
+                           [&](const Piece& x) { return isCongruent(resInversed, x); }) == std::end(ret)) {
+            ret.emplace_back(Piece(resInversed.poly));
           }
         }
       }

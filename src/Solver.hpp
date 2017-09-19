@@ -8,29 +8,28 @@
 #include "Piece.hpp"
 
 namespace procon28 {
-const long double EPS = 1e-10;
 class Solver {
 private:
   std::vector<Piece> pieces;
   std::vector<std::vector<Piece>> rotatePieces;
   Polygon frame;
   bool canRotate(Piece&, const long double, const Point&);
-  bool eq(long double, long double);
-  bool isCongruent(const Piece&, const Piece&);
-  long double round(long double);
+  bool eq(long double, long double) const;
+  bool isCongruent(const Piece&, const Piece&) const;
+  long double round(long double) const;
   std::vector<Piece> makeRotatePieces(const Piece&);
 public:
   Solver();
   Solver(const std::vector<Piece>&, const Polygon&);
-  // 枝刈り全探索による解法
-  void SolvePruned();
+  // 角度を合わせることを目標とするsolver
+  void SolveCorner();
 };
 
-inline bool Solver::eq(long double lhs, long double rhs) {
+inline bool Solver::eq(long double lhs, long double rhs) const {
   return std::abs(lhs - rhs) <= EPS;
 }
 
-inline long double Solver::round(long double n) {
+inline long double Solver::round(long double n) const {
   long double ret = std::round(n);
   if (ret == -0) ret = 0;
   return ret;
