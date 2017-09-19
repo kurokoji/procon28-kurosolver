@@ -43,6 +43,7 @@ Piece translate(const Piece&, Point_Type, Point_Type);
 Piece translate(const Piece&, Point);
 Piece rotate(const Piece&, long double);
 Piece rotate(const Piece&, long double, Point);
+Piece inverse(const Piece&);
 
 inline Ring& Piece::outer() {
   return poly.outer();

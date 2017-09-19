@@ -34,4 +34,7 @@ Piece rotate(const Piece& piece, long double ang) {
 Piece rotate(const Piece& piece, long double ang, Point org) {
   return rotate(translate(piece, -org.x(), -org.y()), ang);
 }
+Piece inverse(const Piece& piece) {
+  return Piece(inverse(piece.poly));
+}
 }  // namespace procon28
