@@ -6,16 +6,21 @@
 
 namespace kuroutil {
 // 立っているビット数を数える
-template <typename T>
-inline int popcount(T x) {
-  unsigned int t = (unsigned int)(x);
-  t = ((t & 0xAAAAAAAA) >> 1) + (t & 0x55555555);
-  t = ((t & 0xCCCCCCCC) >> 2) + (t & 0x33333333);
-  t = ((t & 0xF0F0F0F0) >> 4) + (t & 0x0F0F0F0F);
-  t = ((t & 0xFF00FF00) >> 8) + (t & 0x00FF00FF);
-  t = ((t & 0xFFFF0000) >> 16) + (t & 0x0000FFFF);
+int popcount(unsigned int v) {
+  unsigned int count = (v & 0x55555555) + ((v >> 1) & 0x55555555);
+  count = (count & 0x33333333) + ((count >> 2) & 0x33333333);
+  count = (count & 0x0f0f0f0f) + ((count >> 4) & 0x0f0f0f0f);
+  count = (count & 0x00ff00ff) + ((count >> 8) & 0x00ff00ff);
+  return (count & 0x0000ffff) + ((count >> 16) & 0x0000ffff);
+}
 
-  return t;
+int popcount(unsigned long long int v) {
+  unsigned long long int count = (v & 0x5555555555555555) + ((v >> 1) & 0x5555555555555555);
+  count = (count & 0x3333333333333333) + ((count >> 2) & 0x3333333333333333);
+  count = (count & 0x0f0f0f0f0f0f0f0f) + ((count >> 4) & 0x0f0f0f0f0f0f0f0f);
+  count = (count & 0x00ff00ff00ff00ff) + ((count >> 8) & 0x00ff00ff00ff00ff);
+  count = (count & 0x0000ffff0000ffff) + ((count >> 16) & 0x0000ffff0000ffff);
+  return (int)((count & 0x00000000ffffffff) + ((count >> 32) & 0x00000000ffffffff));
 }
 
 // 整数を2進数表記で表すとき最低限必要なビット数を返す
