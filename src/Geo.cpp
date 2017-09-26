@@ -1,8 +1,8 @@
-#include "Geo.hpp"
-#include <iostream>
 #include <algorithm>
-#include <vector>
 #include <cmath>
+#include <iostream>
+#include <vector>
+#include "Geo.hpp"
 
 namespace procon28 {
 /* Polygonの入力 */
@@ -76,7 +76,7 @@ long double get_angle(const Segment& s) {
 }
 
 long double get_angle(const Segment& lhs, const Segment& rhs) {
-  return abs(get_angle(rhs) - get_angle(lhs));
+  return std::abs(get_angle(rhs) - get_angle(lhs));
 }
 
 long double get_corner(const Ring& ring, int n) {
@@ -102,7 +102,7 @@ Point to_vec(const Segment& s) {
 }
 
 Polygon to_frame(const std::vector<Polygon>& holes) {
-  bg::model::box<Point> box(Point(-20, -20), Point(120, 120));
+  bg::model::box<Point> box(Point(-500, -500), Point(500, 500));
   Polygon ret;
   bg::convert(box, ret);
 
@@ -110,6 +110,19 @@ Polygon to_frame(const std::vector<Polygon>& holes) {
     ret.inners().emplace_back(hole.outer());
   }
   bg::correct(ret);
+  return ret;
+}
+
+std::vector<Polygon> to_piece(const Polygon& frame) {
+  std::vector<Polygon> ret;
+  ret.reserve(frame.inners().size());
+  for (auto&& hole : frame.inners()) {
+    Polygon poly;
+    for (auto&& p : hole) {
+      poly.outer().emplace_back(p);
+    }
+    ret.emplace_back(poly);
+  }
   return ret;
 }
 
@@ -139,5 +152,24 @@ Polygon inverse(const Polygon& poly) {
   Polygon ret = poly;
   for (auto& p : ret.outer()) p = Point(-p.x(), p.y());
   return ret;
+}
+
+Polygon scale(const Polygon& p, double s) {
+  auto origin = bg::return_centroid<Point>(p);
+  trans::scale_transformer<long double, 2, 2> tr(s);
+  Polygon r;
+  bg::transform(translate(p, -origin.x(), -origin.y()), r, tr);
+  return translate(r, origin.x(), origin.y());
+}
+
+void printFrame(const Polygon& frame, std::ostream& os) {
+  os << frame.inners().size() << '\n';
+  for (auto&& hole : frame.inners()) {
+    os << hole.size() << '\n';
+    for (auto&& p : hole) {
+      os << p.x() << " " << p.y() << '\n';
+    }
+  }
+  os << std::flush;
 }
 }  // namespace procon28

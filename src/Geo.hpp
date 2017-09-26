@@ -39,11 +39,14 @@ long double get_corner(const Ring&, int);
 long double get_corner(const Polygon&, int);
 Point to_vec(const Segment&);
 Polygon to_frame(const std::vector<Polygon>&);
+std::vector<Polygon> to_piece(const Polygon&);
 Polygon translate(const Polygon&, Point_Type, Point_Type);
 Polygon translate(const Polygon&, Point);
 Polygon rotate(const Polygon&, long double);
 Polygon rotate(const Polygon&, long double, Point);
 Polygon inverse(const Polygon&);
+Polygon scale(const Polygon&, double);
+void printFrame(const Polygon&, std::ostream&);
 
 }  // namespace procon28
 
