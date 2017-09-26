@@ -1,5 +1,4 @@
 #include "Geo.hpp"
-#include "KuroUtil.hpp"
 #include "Piece.hpp"
 #include "State.hpp"
 
@@ -8,57 +7,94 @@
 #include <numeric>
 #include <tuple>
 #include <vector>
+#define BOOST_GEOMETRY_INCLUDE_SELF_TURNS
 
 namespace procon28 {
 State::State() {}
-State::State(const Polygon& _frame) : frame(_frame), used(0) {}
-State::State(const Polygon& _frame, const Polygon& _prev, CheckType x)
-    : frame(_frame), prev(_prev), used(x) {}
+State::State(const Polygon& poly) : frame(poly), used(0) {
+  bg::correct(frame);
+}
+State::State(Polygon&& poly) : frame(poly), used(0) {
+  bg::correct(frame);
+}
+State::State(const Polygon& poly, const Polygon& pr, CheckType x, ScoreType score = -1) : frame(poly), prev(pr), used(x), score(score) {
+  bg::correct(frame);
+}
+State::State(Polygon&& poly, const Polygon& pr, CheckType x, ScoreType score = -1) : frame(poly), prev(pr), used(x), score(score) {
+  bg::correct(frame);
+}
 
-std::tuple<bool, Polygon> State::fit(const Ring& hole, int a, const Polygon& piece, int b) const {
+std::tuple<bool, Polygon> State::fitCorner(const Ring& hole, int a, const Polygon& piece, int b) const {
   long double ha = get_corner(hole, a);
   long double pa = get_corner(piece, b);
-  Segment hs = get_segment(hole, a);
-  Segment ps = get_segment(piece, b);
+  Segment&& hs = get_segment(hole, a);
+  Segment&& ps = get_segment(piece, b);
   // 角度が合ってなければだめ
   if (EPS < std::abs(get_angle(hs) - get_angle(ps))) return std::make_tuple(false, Polygon());
   if (EPS < std::abs(ha - pa)) return std::make_tuple(false, Polygon());
-  Point hp = get_point(hole, a);
-  Point pp = get_point(piece, b);
+  Point&& hp = get_point(hole, a);
+  Point&& pp = get_point(piece, b);
   return std::make_tuple(true, translate(piece, hp - pp));
 }
 
-bool State::canput(const Polygon& piece) const {
-  std::vector<Polygon> res;
-  bg::intersection(frame, piece, res);
-  long double sum = 0.0;
-  for (const Polygon& p : res) {
-    sum += bg::area(p);
-  }
-
-  // かぶっている面積が今埋めようとしているピースの同じ面積ならOK
-  return EPS >= std::abs(sum - bg::area(piece));
+std::tuple<bool, Polygon> State::fitSegment(const Ring& hole, int a, const Polygon& piece, int b) const {
+  Segment&& hs = get_segment(hole, a);
+  Segment&& ps = get_segment(piece, b);
+  if (EPS < std::abs(get_angle(hs) - get_angle(ps))) return std::make_tuple(false, Polygon());
+  long double hslen = bg::length(hs);
+  long double pslen = bg::length(ps);
+  if (EPS < std::abs(hslen - pslen)) return std::make_tuple(false, Polygon());
+  Point&& hp = get_point(hole, a);
+  Point&& pp = get_point(piece, b);
+  return std::make_tuple(true, translate(piece, hp - pp));
 }
 
-State State::nextState(const Polygon& piece, int id) const {
-  std::vector<Polygon> merged;
-  // フレームとピースの被っている部分を列挙
-  bg::union_(frame, piece, merged);
-  const size_t N = merged.size();
-  // これあんま意味ないかも(意味なかったら外す)
-  for (size_t i = 1; i < N; ++i) {
-    merged.front().inners().emplace_back(merged[i].outer());
+bool State::canPut(const Polygon& piece) const {
+  auto p = piece;
+  bg::correct(p);
+  std::vector<Polygon> v;
+  bg::intersection(frame, p, v);
+  return v.size() == 0;
+}
+
+bool State::canUseFrame(const Polygon& nextFrame, long double minimumAngle) const {
+  for (auto&& hole : nextFrame.inners()) {
+    for (size_t i = 0; i < hole.size() - 1; ++i) {
+      if (minimumAngle > get_corner(hole, i)) return false;
+      // 1辺の長さが1cm(4グリッド幅)が保証されるためそれより小さいものは省く
+      if (4.0 > bg::length(get_segment(hole, i))) return false;
+    }
   }
-  bg::correct(merged.front());
-  // ピースをマージしたフレーム, 使ったピースの保存, 使ったピースのIDを記録
-  return State(merged.front(), piece, used | (1ull << id));
+  return true;
+}
+
+ScoreType State::evaluation(const Polygon& nextFrame) const {
+  ScoreType sum = 0.0;
+  for (auto&& hole : nextFrame.inners()) {
+    Ring hull;
+    bg::convex_hull(hole, hull);
+    auto&& hulla = bg::area(hull);
+    sum += hulla;
+  }
+
+  return sum;
+}
+
+Polygon State::newFrame(const Polygon& _piece) const {
+  std::vector<Polygon> v;
+  auto p = _piece;
+  bg::correct(p);
+  bg::union_(frame, p, v);
+  bg::correct(v[0]);
+
+  return v[0];
 }
 
 // 角度を合わせて列挙する
-std::vector<State> State::GetNextCornerState(
-    const std::vector<std::vector<Piece>>& rotatePieces) const {
-  namespace util = kuroutil;
+std::vector<State> State::getNextCornerState(const std::vector<std::vector<Piece>>& rotatePieces,
+                                             long double minimumAngle) const {
   std::vector<State> ret;
+
   for (const Ring& hole : frame.inners()) {
     const size_t holepointN = hole.size() - 1;
     for (size_t h = 0; h < holepointN; ++h) {
@@ -71,10 +107,12 @@ std::vector<State> State::GetNextCornerState(
           for (size_t p = 0; p < pointN; ++p) {
             bool ok;
             Polygon tr;
-            std::tie(ok, tr) = fit(hole, h, piece.poly, p);
+            std::tie(ok, tr) = fitCorner(hole, h, piece.poly, p);
             if (!ok) continue;
-            if (!canput(tr)) continue;
-            ret.emplace_back(nextState(tr, id));
+            if (!canPut(tr)) continue;
+            Polygon nextFrame = newFrame(tr);
+            if (!canUseFrame(nextFrame, minimumAngle)) continue;
+            ret.emplace_back(nextFrame, tr, used | (1ull << id), evaluation(nextFrame));
           }
         }
       }
