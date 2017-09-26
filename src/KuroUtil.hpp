@@ -92,6 +92,17 @@ bool is_perfect_square(T x) {
   return pow(sqrt(x), 2) == x;
 }
 
+template <typename T>
+void log(T x) {
+  std::cerr << x << std::endl;
+}
+
+template <typename T, typename... S>
+void log(T x, S... rest) {
+  std::cerr << x << " ";
+  log(rest...);
+}
+
 }  // namespace kuroutil
 
 #endif
