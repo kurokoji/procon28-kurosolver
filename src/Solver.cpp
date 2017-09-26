@@ -2,24 +2,122 @@
 #include "KuroUtil.hpp"
 #include "Piece.hpp"
 #include "Solver.hpp"
+#include "State.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <iostream>
+#include <queue>
+#include <stack>
 #include <vector>
 
 namespace procon28 {
-Solver::Solver() {}
-Solver::Solver(const std::vector<Piece>& pieces, const Polygon& frame)
-    : pieces(pieces), frame(frame) {
-  auto v = makeRotatePieces(pieces[0]);
-  for (auto&& t : v) {
-    std::cout << t;
+Solver::Context::Context() {}
+Solver::Context::Context(const State& s, std::shared_ptr<Context> ptr = nullptr) : state(s), node(ptr) {}
+Solver::Context::Context(State&& s, std::shared_ptr<Context> ptr = nullptr) : state(s), node(ptr) {}
+void Solver::Context::pieceAnswer(std::ostream& os) const {
+  std::vector<Polygon> res;
+  for (auto ptr = this; ptr->node != nullptr; ptr = ptr->node.get()) {
+    res.emplace_back(ptr->state.prev);
+  }
+  os << res.size() << std::endl;
+  for (auto&& p : res) {
+    os << p;
   }
 }
 
-void Solver::SolveCorner() {
-  
+Solver::Solver() {}
+Solver::Solver(const std::vector<Piece>& pieces, const Polygon& frame) : pieces(pieces), frame(frame) {
+  minimumAngle = std::acos(-1);
+  for (auto&& piece : pieces) {
+    rotatePieces.emplace_back(makeRotatePieces(piece));
+    for (size_t i = 0; i < piece.outer().size() - 1; ++i) {
+      minimumAngle = std::min(minimumAngle, get_corner(piece.poly, i));
+    }
+  }
+}
+
+void Solver::solveCorner(const State& ini) const {
+  namespace util = kuroutil;
+  using context_ptr = std::shared_ptr<Context>;
+  const size_t N = pieces.size();
+
+  std::stack<context_ptr> st;
+  auto best = std::make_shared<Context>(ini);
+  st.emplace(best);
+  size_t ma = 0;
+  auto start_time = std::chrono::system_clock::now();
+  util::log("DFS start!!", N);
+  while (!st.empty()) {
+    auto v = st.top();
+    st.pop();
+    const size_t cnt = util::popcount(v->state.used);
+    if (ma < cnt) {
+      best = v;
+      ma = cnt;
+      util::log("put", cnt, st.size());
+    }
+
+    if (cnt == N) break;
+    auto&& nextState = v->state.getNextCornerState(rotatePieces, minimumAngle);
+    for (auto&& sta : nextState) {
+      st.emplace(std::make_shared<Context>(sta, v));
+    }
+  }
+  auto end_time = std::chrono::system_clock::now();
+  auto diff = end_time - start_time;
+  util::log("minutes:", std::chrono::duration_cast<std::chrono::minutes>(diff).count());
+  util::log("seconds:", std::chrono::duration_cast<std::chrono::seconds>(diff).count());
+
+  printFrame(frame, std::cout);
+  best->pieceAnswer(std::cout);
+}
+
+void Solver::solveBeamSearch(const State& ini, const size_t beamWidth) const {
+  namespace util = kuroutil;
+  using context_ptr = std::shared_ptr<Context>;
+  const size_t N = pieces.size();
+  orliv::misc::PostScript("dbg.ps");
+  std::vector<context_ptr> beam, next;
+  auto best = std::make_shared<Context>(ini);
+
+  beam.emplace_back(best);
+
+  util::log("BeamSearch Start!!", N);
+  auto start_time = std::chrono::system_clock::now();
+  while (!beam.empty()) {
+    best = beam.front();
+    const size_t cnt = util::popcount(best->state.used);
+    util::log("Step", cnt, "Size", beam.size());
+    if (cnt == N) break;
+    std::vector<context_ptr> can;
+    for (auto&& con : beam) {
+      auto&& nextState = con->state.getNextCornerState(rotatePieces, minimumAngle);
+      for (auto&& sta : nextState) {
+        can.emplace_back(std::make_shared<Context>(sta, con));
+      }
+    }
+    util::log(can.size());
+
+    const int wid = std::min(beamWidth, can.size());
+    std::partial_sort(
+        std::begin(can), std::begin(can) + wid, std::end(can),
+        [](const context_ptr& lhs, const context_ptr& rhs) { return lhs->state.score < rhs->state.score; });
+    next.clear();
+    for (size_t i = 0; i < wid; ++i) {
+      next.emplace_back(can[i]);
+    }
+    beam.swap(next);
+  }
+  auto end_time = std::chrono::system_clock::now();
+  auto diff = end_time - start_time;
+  util::log("minutes:", std::chrono::duration_cast<std::chrono::minutes>(diff).count());
+  util::log("seconds:", std::chrono::duration_cast<std::chrono::seconds>(diff).count());
+  printFrame(frame, std::cout);
+  best->pieceAnswer(std::cout);
+}
+
 }
 
 bool Solver::canRotate(Piece& piece, const long double angle, const Point& org) {
@@ -87,12 +185,12 @@ std::vector<Piece> Solver::makeRotatePieces(const Piece& piece) {
           const Point& fr = res.outer().front();
           res = translate(res, -fr.x(), -fr.y());
           // すでに同じ図形があったらpushしない
-          if (std::find_if(std::begin(ret), std::end(ret),
-                           [&](const Piece& x) { return isCongruent(res, x); }) == std::end(ret)) {
+          if (std::find_if(std::begin(ret), std::end(ret), [&](const Piece& x) { return isCongruent(res, x); }) ==
+              std::end(ret)) {
             ret.emplace_back(Piece(res.poly));
           }
         }
-        
+
         Piece resInversed = inverse(piece);
 
         if (canRotate(resInversed, distAngle, resInversed.outer()[i])) {
