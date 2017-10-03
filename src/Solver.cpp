@@ -29,13 +29,14 @@ void Solver::Context::pieceAnswer(std::ostream& os) const {
 
 Solver::Solver() {}
 Solver::Solver(const std::vector<Piece>& pieces, const Polygon& frame) : pieces(pieces), frame(frame) {
-  minimumAngle = std::acos(-1);
+  minimumAngle = M_PI * 2;
   for (auto&& piece : pieces) {
     rotatePieces.emplace_back(makeRotatePieces(piece));
     for (size_t i = 0; i < piece.outer().size() - 1; ++i) {
       minimumAngle = std::min(minimumAngle, get_corner(piece.poly, i));
     }
   }
+  std::cerr << minimumAngle << std::endl;
 }
 
 void Solver::solveCorner(const State& ini) const {
@@ -70,8 +71,44 @@ void Solver::solveCorner(const State& ini) const {
   util::log("minutes:", std::chrono::duration_cast<std::chrono::minutes>(diff).count());
   util::log("seconds:", std::chrono::duration_cast<std::chrono::seconds>(diff).count());
 
-  printFrame(frame, std::cout);
   best->pieceAnswer(std::cout);
+  printFrame(frame, std::cout);
+}
+
+void Solver::solveSegment(const State& ini) const {
+  namespace util = kuroutil;
+  using context_ptr = std::shared_ptr<Context>;
+  const size_t N = pieces.size();
+
+  std::stack<context_ptr> st;
+  auto best = std::make_shared<Context>(ini);
+  st.emplace(best);
+  size_t ma = 0;
+  auto start_time = std::chrono::system_clock::now();
+  util::log("DFS start!!", N);
+  while (!st.empty()) {
+    auto v = st.top();
+    st.pop();
+    const size_t cnt = util::popcount(v->state.used);
+    if (ma < cnt) {
+      best = v;
+      ma = cnt;
+      util::log("put", cnt, st.size());
+    }
+
+    if (cnt == N) break;
+    auto&& nextState = v->state.getNextSegmentState(rotatePieces, minimumAngle);
+    for (auto&& sta : nextState) {
+      st.emplace(std::make_shared<Context>(sta, v));
+    }
+  }
+  auto end_time = std::chrono::system_clock::now();
+  auto diff = end_time - start_time;
+  util::log("minutes:", std::chrono::duration_cast<std::chrono::minutes>(diff).count());
+  util::log("seconds:", std::chrono::duration_cast<std::chrono::seconds>(diff).count());
+
+  best->pieceAnswer(std::cout);
+  printFrame(frame, std::cout);
 }
 
 void Solver::solveBeamSearch(const State& ini, const size_t beamWidth) const {
@@ -93,17 +130,21 @@ void Solver::solveBeamSearch(const State& ini, const size_t beamWidth) const {
     if (cnt == N) break;
     std::vector<context_ptr> can;
     for (auto&& con : beam) {
-      auto&& nextState = con->state.getNextCornerState(rotatePieces, minimumAngle);
-      for (auto&& sta : nextState) {
+      auto&& nextCornerState = con->state.getNextCornerState(rotatePieces, minimumAngle);
+      for (auto&& sta : nextCornerState) {
+        can.emplace_back(std::make_shared<Context>(sta, con));
+      }
+      auto&& nextSegmentState = con->state.getNextSegmentState(rotatePieces, minimumAngle);
+      for (auto&& sta : nextSegmentState) {
         can.emplace_back(std::make_shared<Context>(sta, con));
       }
     }
     util::log(can.size());
 
     const int wid = std::min(beamWidth, can.size());
-    std::partial_sort(
-        std::begin(can), std::begin(can) + wid, std::end(can),
-        [](const context_ptr& lhs, const context_ptr& rhs) { return lhs->state.score < rhs->state.score; });
+    std::partial_sort(std::begin(can), std::begin(can) + wid, std::end(can), [&](const context_ptr& lhs, const context_ptr& rhs) {
+        return lhs->state.score < rhs->state.score;
+        });
     next.clear();
     for (size_t i = 0; i < wid; ++i) {
       next.emplace_back(can[i]);
@@ -114,9 +155,11 @@ void Solver::solveBeamSearch(const State& ini, const size_t beamWidth) const {
   auto diff = end_time - start_time;
   util::log("minutes:", std::chrono::duration_cast<std::chrono::minutes>(diff).count());
   util::log("seconds:", std::chrono::duration_cast<std::chrono::seconds>(diff).count());
-  printFrame(frame, std::cout);
   best->pieceAnswer(std::cout);
+  printFrame(frame, std::cout);
 }
+
+void Solver::solveChokudaiSearch(const State& ini, const size_t) const {
 
 }
 
