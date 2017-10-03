@@ -84,13 +84,15 @@ long double get_corner(const Ring& ring, int n) {
   const size_t x = n % N;
 
   if (x == 0) {
-    const Segment a = get_segment(ring, 0);
-    const Segment b = get_segment(ring, N - 1);
-    return get_angle(a, b);
+    Point a = get_point(ring, N - 1);
+    Point b = get_point(ring, 0);
+    Point c = get_point(ring, 1);
+    return get_angle(Segment(b, a), Segment(b, c));
   }
-  const Segment a = get_segment(ring, x - 1);
-  const Segment b = get_segment(ring, x);
-  return get_angle(a, b);
+  Point a = get_point(ring, x - 1);
+  Point b = get_point(ring, x);
+  Point c = get_point(ring, x + 1);
+  return get_angle(Segment(b, a), Segment(b, c));
 }
 
 long double get_corner(const Polygon& poly, int n) {
