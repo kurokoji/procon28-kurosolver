@@ -17,10 +17,12 @@ State::State(const Polygon& poly) : frame(poly), used(0) {
 State::State(Polygon&& poly) : frame(poly), used(0) {
   bg::correct(frame);
 }
-State::State(const Polygon& poly, const Polygon& pr, CheckType x, ScoreType score = -1) : frame(poly), prev(pr), used(x), score(score) {
+State::State(const Polygon& poly, const Polygon& pr, CheckType x, ScoreType score = -1)
+    : frame(poly), prev(pr), used(x), score(score) {
   bg::correct(frame);
 }
-State::State(Polygon&& poly, const Polygon& pr, CheckType x, ScoreType score = -1) : frame(poly), prev(pr), used(x), score(score) {
+State::State(Polygon&& poly, const Polygon& pr, CheckType x, ScoreType score = -1)
+    : frame(poly), prev(pr), used(x), score(score) {
   bg::correct(frame);
 }
 
@@ -58,9 +60,11 @@ bool State::canPut(const Polygon& piece) const {
 }
 
 bool State::canUseFrame(const Polygon& nextFrame, long double minimumAngle) const {
+  if (nextFrame.inners().size() != 1) return false;
   for (auto&& hole : nextFrame.inners()) {
     for (size_t i = 0; i < hole.size() - 1; ++i) {
-      if (minimumAngle > get_corner(hole, i)) return false;
+      auto&& cor = get_corner(hole, i);
+      if (minimumAngle > cor && EPS < std::abs(cor - M_PI)) return false;
       // 1辺の長さが1cm(4グリッド幅)が保証されるためそれより小さいものは省く
       if (4.0 > bg::length(get_segment(hole, i))) return false;
     }
@@ -109,6 +113,35 @@ std::vector<State> State::getNextCornerState(const std::vector<std::vector<Piece
             Polygon tr;
             std::tie(ok, tr) = fitCorner(hole, h, piece.poly, p);
             if (!ok) continue;
+            if (!canPut(tr)) continue;
+            Polygon nextFrame = newFrame(tr);
+            if (!canUseFrame(nextFrame, minimumAngle)) continue;
+            ret.emplace_back(nextFrame, tr, used | (1ull << id), evaluation(nextFrame));
+          }
+        }
+      }
+    }
+  }
+  return ret;
+}
+
+std::vector<State> State::getNextSegmentState(const std::vector<std::vector<Piece>>& rotatePieces,
+                                              long double minimumAngle) const {
+  std::vector<State> ret;
+
+  for (const Ring& hole : frame.inners()) {
+    const size_t holepointN = hole.size() - 1;
+    for (size_t h = 0; h < holepointN; ++h) {
+      const size_t rotatePiecesN = rotatePieces.size();
+      for (size_t id = 0; id < rotatePiecesN; ++id) {
+        if (used & (1ull << id)) continue;
+        for (const Piece& piece : rotatePieces[id]) {
+          const size_t pointN = piece.outer().size() - 1;
+          for (size_t p = 0; p < pointN; ++p) {
+            bool isFit;
+            Polygon tr;
+            std::tie(isFit, tr) = fitSegment(hole, h, piece.poly, p);
+            if (!isFit) continue;
             if (!canPut(tr)) continue;
             Polygon nextFrame = newFrame(tr);
             if (!canUseFrame(nextFrame, minimumAngle)) continue;

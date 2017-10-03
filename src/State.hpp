@@ -15,6 +15,7 @@ using ScoreType = long double;
 class State {
 private:
   std::tuple<bool, Polygon> fitCorner(const Ring&, int, const Polygon&, int) const;
+  std::tuple<bool, Polygon> fitSegment(const Ring&, int, const Polygon&, int) const;
   bool canPut(const Polygon&) const;
   bool canUseFrame(const Polygon&, long double) const;
   Polygon newFrame(const Polygon&) const;
@@ -31,6 +32,7 @@ public:
   State(const Polygon&, const Polygon&, CheckType, ScoreType);
   State(Polygon&&, const Polygon&, CheckType, ScoreType);
   std::vector<State> getNextCornerState(const std::vector<std::vector<Piece>>&, long double) const;
+  std::vector<State> getNextSegmentState(const std::vector<std::vector<Piece>>&, long double) const;
 };
 }  // namespace procon28
 
