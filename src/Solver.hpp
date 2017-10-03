@@ -38,7 +38,9 @@ public:
   Solver(const std::vector<Piece>&, const Polygon&);
   // 角度を合わせることを目標とするsolver
   void solveCorner(const State&) const;
+  void solveSegment(const State&) const;
   void solveBeamSearch(const State&, const size_t) const;
+  void solveChokudaiSearch(const State&, const size_t) const;
 };
 
 inline bool Solver::eq(long double lhs, long double rhs) const {
