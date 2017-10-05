@@ -46,7 +46,7 @@ const Point operator-(const Point& lhs, const Point& rhs) {
 
 Point get_point(const Ring& ring, int n) {
   const size_t N = ring.size() - 1;
-  return ring[n % N];
+  return ring[(n + N) % N];
 }
 
 Point get_point(const Polygon& poly, int n) {
@@ -54,7 +54,7 @@ Point get_point(const Polygon& poly, int n) {
 }
 
 Segment get_segment(const Ring& ring, int a, int b) {
-  return Segment(ring[a], ring[b]);
+  return Segment(get_point(ring, a), get_point(ring, b));
 }
 
 Segment get_segment(const Polygon& poly, int a, int b) {
@@ -63,7 +63,7 @@ Segment get_segment(const Polygon& poly, int a, int b) {
 
 Segment get_segment(const Ring& ring, int n) {
   const size_t N = ring.size() - 1;
-  return Segment(ring[n % N], ring[(n + 1) % N]);
+  return Segment(get_point(ring, n), get_point(ring, n + 1));
 }
 
 Segment get_segment(const Polygon& poly, int n) {
