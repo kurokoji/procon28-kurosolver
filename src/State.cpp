@@ -5,25 +5,32 @@
 #include <algorithm>
 #include <iostream>
 #include <numeric>
+#include <set>
 #include <tuple>
 #include <vector>
 #define BOOST_GEOMETRY_INCLUDE_SELF_TURNS
 
 namespace procon28 {
 State::State() {}
-State::State(const Polygon& poly) : frame(poly), used(0) {
+State::State(const Polygon& poly) : frame(poly), used(0), score(0) {
   bg::correct(frame);
 }
-State::State(Polygon&& poly) : frame(poly), used(0) {
+State::State(Polygon&& poly) : frame(poly), used(0), score(0) {
   bg::correct(frame);
 }
-State::State(const Polygon& poly, const Polygon& pr, CheckType x, ScoreType score = -1)
+State::State(const Polygon& poly, const Polygon& pr, CheckType x, ScoreType score = 0)
     : frame(poly), prev(pr), used(x), score(score) {
   bg::correct(frame);
+  for (auto&& p : pr.outer()) {
+    pset.insert(std::make_pair((int)p.x(), (int)p.y()));
+  }
 }
-State::State(Polygon&& poly, const Polygon& pr, CheckType x, ScoreType score = -1)
+State::State(Polygon&& poly, const Polygon& pr, CheckType x, ScoreType score = 0)
     : frame(poly), prev(pr), used(x), score(score) {
   bg::correct(frame);
+  for (auto&& p : pr.outer()) {
+    pset.insert(std::make_pair((int)p.x(), (int)p.y()));
+  }
 }
 
 std::tuple<bool, Polygon> State::fitCorner(const Ring& hole, int a, const Polygon& piece, int b) const {
@@ -72,9 +79,9 @@ bool State::canUseFrame(const Polygon& nextFrame, long double minimumAngle) cons
   return true;
 }
 
-ScoreType State::evaluation(const Polygon& nextFrame) const {
+ScoreType State::convexHullEval(const Polygon& newFrame) const {
   ScoreType sum = 0.0;
-  for (auto&& hole : nextFrame.inners()) {
+  for (auto&& hole : newFrame.inners()) {
     Ring hull;
     bg::convex_hull(hole, hull);
     auto&& hulla = bg::area(hull);
@@ -84,9 +91,23 @@ ScoreType State::evaluation(const Polygon& nextFrame) const {
   return sum;
 }
 
-Polygon State::newFrame(const Polygon& _piece) const {
+ScoreType State::fitSegEval(const Polygon& piece, size_t holeN, int f, int p) const {
+  const Ring& hole = frame.inners()[holeN];
+  ScoreType sum = 0.0;
+  Segment a = get_segment(hole, f), b = get_segment(piece, p), c = get_segment(hole, f - 1),
+          d = get_segment(piece, p - 1);
+  sum += bg::equals(a, b);
+  sum += bg::equals(c, d);
+  return sum;
+}
+
+ScoreType State::evaluation(const Polygon& nextFrame) const {
+  return convexHullEval(nextFrame);
+}
+
+Polygon State::newFrame(const Polygon& piece) const {
   std::vector<Polygon> v;
-  auto p = _piece;
+  auto p = piece;
   bg::correct(p);
   bg::union_(frame, p, v);
   bg::correct(v[0]);
@@ -99,10 +120,12 @@ std::vector<State> State::getNextCornerState(const std::vector<std::vector<Piece
                                              long double minimumAngle) const {
   std::vector<State> ret;
 
+  using P = std::pair<int, int>;
   for (const Ring& hole : frame.inners()) {
     const size_t holepointN = hole.size() - 1;
     for (size_t h = 0; h < holepointN; ++h) {
       const size_t rotatePiecesN = rotatePieces.size();
+      if (used && pset.find(P(hole[h].x(), hole[h].y())) == pset.end()) continue;
       for (size_t id = 0; id < rotatePiecesN; ++id) {
         // すでに同一idのピースを使用していたら飛ばす
         if (used & (1ull << id)) continue;
@@ -122,6 +145,7 @@ std::vector<State> State::getNextCornerState(const std::vector<std::vector<Piece
       }
     }
   }
+
   return ret;
 }
 
@@ -129,10 +153,12 @@ std::vector<State> State::getNextSegmentState(const std::vector<std::vector<Piec
                                               long double minimumAngle) const {
   std::vector<State> ret;
 
+  using P = std::pair<int, int>;
   for (const Ring& hole : frame.inners()) {
     const size_t holepointN = hole.size() - 1;
     for (size_t h = 0; h < holepointN; ++h) {
       const size_t rotatePiecesN = rotatePieces.size();
+      if (used && pset.find(P(hole[h].x(), hole[h].y())) == pset.end()) continue;
       for (size_t id = 0; id < rotatePiecesN; ++id) {
         if (used & (1ull << id)) continue;
         for (const Piece& piece : rotatePieces[id]) {
@@ -153,4 +179,39 @@ std::vector<State> State::getNextSegmentState(const std::vector<std::vector<Piec
   }
   return ret;
 }
+
+std::vector<State> State::getNextCornerPriSegState(const std::vector<std::vector<Piece>>& rotatePieces,
+                                                   long double minimumAngle) const {
+  std::vector<State> ret;
+
+  using P = std::pair<int, int>;
+  for (size_t i = 0; i < frame.inners().size(); ++i) {
+    const Ring& hole = frame.inners()[i];
+    const size_t holepointN = hole.size() - 1;
+    for (size_t h = 0; h < holepointN; ++h) {
+      const size_t rotatePiecesN = rotatePieces.size();
+      if (used && pset.find(P(hole[h].x(), hole[h].y())) == pset.end()) continue;
+      for (size_t id = 0; id < rotatePiecesN; ++id) {
+        // すでに同一idのピースを使用していたら飛ばす
+        if (used & (1ull << id)) continue;
+        for (const Piece& piece : rotatePieces[id]) {
+          const size_t pointN = piece.outer().size() - 1;
+          for (size_t p = 0; p < pointN; ++p) {
+            bool ok;
+            Polygon tr;
+            std::tie(ok, tr) = fitCorner(hole, h, piece.poly, p);
+            if (!ok) continue;
+            if (!canPut(tr)) continue;
+            Polygon nextFrame = newFrame(tr);
+            if (!canUseFrame(nextFrame, minimumAngle)) continue;
+            ret.emplace_back(nextFrame, tr, used | (1ull << id), fitSegEval(tr, i, h, p));
+          }
+        }
+      }
+    }
+  }
+
+  return ret;
+}
+
 }  // namespace procon28
