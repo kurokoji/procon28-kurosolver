@@ -3,10 +3,27 @@
 
 #include <iostream>
 #include <vector>
+#include <chrono>
 
 namespace kuroutil {
+struct TimeCheck {
+  std::chrono::system_clock::time_point st;
+  std::chrono::seconds en;
+  TimeCheck() {}
+  TimeCheck(int sec) : en(sec), st(std::chrono::system_clock::now()) {
+    std::cerr << "Start: " << en.count() << std::endl;
+  }
+  bool isFinish() {
+    auto&& now = getNowTime();
+    return (now - st) >= en;
+  }
+  std::chrono::system_clock::time_point getNowTime() {
+    return std::chrono::system_clock::now();
+  }
+};
+
 // 立っているビット数を数える
-int popcount(unsigned int v) {
+inline int popcount(unsigned int v) {
   unsigned int count = (v & 0x55555555) + ((v >> 1) & 0x55555555);
   count = (count & 0x33333333) + ((count >> 2) & 0x33333333);
   count = (count & 0x0f0f0f0f) + ((count >> 4) & 0x0f0f0f0f);
@@ -14,7 +31,7 @@ int popcount(unsigned int v) {
   return (count & 0x0000ffff) + ((count >> 16) & 0x0000ffff);
 }
 
-int popcount(unsigned long long int v) {
+inline int popcount(unsigned long long int v) {
   unsigned long long int count = (v & 0x5555555555555555) + ((v >> 1) & 0x5555555555555555);
   count = (count & 0x3333333333333333) + ((count >> 2) & 0x3333333333333333);
   count = (count & 0x0f0f0f0f0f0f0f0f) + ((count >> 4) & 0x0f0f0f0f0f0f0f0f);
@@ -64,7 +81,7 @@ inline int sqrt(int n) {
 
 // 平方数かどうかを判定する
 template <typename T>
-bool is_perfect_square(T x) {
+inline bool is_perfect_square(T x) {
   constexpr bool sq_mod256[] = {
       1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
       0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1,
@@ -93,12 +110,12 @@ bool is_perfect_square(T x) {
 }
 
 template <typename T>
-void log(T x) {
+inline void log(T x) {
   std::cerr << x << std::endl;
 }
 
 template <typename T, typename... S>
-void log(T x, S... rest) {
+inline void log(T x, S... rest) {
   std::cerr << x << " ";
   log(rest...);
 }
