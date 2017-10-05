@@ -11,7 +11,10 @@
 using namespace procon28;
 
 int main(int argc, char *argv[]) {
-  if (argc == 0) return -1;
+  if (argc < 2) {
+    std::cerr << "error" << std::endl;
+    return -1;
+  }
 
   using std::cin;
   using std::cout;
@@ -49,5 +52,8 @@ int main(int argc, char *argv[]) {
   State init(frame);
   Solver solver(pieces, frame);
   // solver.solveCorner(init);
-  solver.solveBeamSearch(init, std::atoi(argv[1]));
+  // solver.solveBeamSearch(init, std::atoi(argv[1]));
+  solver.solveChokudaiSearch(init, std::atoi(argv[1]));
+  // solver.solveSegMainSearch(init);
+  // solver.solveSegment(init);
 }
