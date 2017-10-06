@@ -14,6 +14,7 @@
 #include <vector>
 
 namespace procon28 {
+const long double PI = std::acos(-1);
 bool operator<(const std::shared_ptr<Solver::Context>& lhs, const std::shared_ptr<Solver::Context>& rhs) {
   return lhs->state.score < rhs->state.score;
 }
@@ -38,7 +39,7 @@ void Solver::Context::pieceAnswer(std::ostream& os) const {
 
 Solver::Solver() {}
 Solver::Solver(const std::vector<Piece>& pieces, const Polygon& frame) : pieces(pieces), frame(frame) {
-  minimumAngle = M_PI * 2;
+  minimumAngle = PI * 2;
   for (auto&& piece : pieces) {
     rotatePieces.emplace_back(makeRotatePieces(piece));
     for (size_t i = 0; i < piece.outer().size() - 1; ++i) {
