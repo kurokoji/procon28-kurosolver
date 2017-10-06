@@ -71,7 +71,7 @@ bool State::canUseFrame(const Polygon& nextFrame, long double minimumAngle) cons
   for (auto&& hole : nextFrame.inners()) {
     for (size_t i = 0; i < hole.size() - 1; ++i) {
       auto&& cor = get_corner(hole, i);
-      if (minimumAngle > cor && EPS < std::abs(cor - M_PI)) return false;
+      if (minimumAngle > cor && EPS < std::abs(cor - PI)) return false;
       // 1辺の長さが1cm(4グリッド幅)が保証されるためそれより小さいものは省く
       if (4.0 > bg::length(get_segment(hole, i))) return false;
     }

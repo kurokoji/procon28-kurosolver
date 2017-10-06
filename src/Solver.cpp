@@ -14,7 +14,6 @@
 #include <vector>
 
 namespace procon28 {
-const long double PI = std::acos(-1);
 bool operator<(const std::shared_ptr<Solver::Context>& lhs, const std::shared_ptr<Solver::Context>& rhs) {
   return lhs->state.score < rhs->state.score;
 }

@@ -20,6 +20,7 @@ using Segment = bg::model::segment<Point>;          // 線分
 using Ring = typename Polygon::ring_type;
 using InnerContainer = typename Polygon::inner_container_type;
 const long double EPS = 1e-10;
+const long double PI = std::acos(-1);
 
 std::istream& operator>>(std::istream&, Polygon&);
 std::ostream& operator<<(std::ostream&, Polygon&);
