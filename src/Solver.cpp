@@ -316,7 +316,7 @@ std::vector<Piece> Solver::makeRotatePieces(const Piece& piece) {
   ret.emplace_back(piece);
 
   const size_t segmentN = piece.segments.size();
-  // 座標は左回り
+  // 座標は時計回り
   // 各辺に対して回転出来るやつを列挙する
   for (size_t i = 0; i < segmentN; ++i) {
     const Segment& s = piece.segments[i];
