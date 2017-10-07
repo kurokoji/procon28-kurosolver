@@ -53,6 +53,17 @@ Point get_point(const Polygon& poly, int n) {
   return get_point(poly.outer(), n);
 }
 
+Point get_point(const Segment& s, int n) {
+  if (n % 2 == 0) {
+    return Point(bg::get<0, 0>(s), bg::get<0, 1>(s));
+  }
+  return Point(bg::get<1, 0>(s), bg::get<1, 1>(s));
+}
+
+Segment inv_segment(const Segment& s) {
+  return Segment(get_point(s, 1), get_point(s, 0));
+}
+
 Segment get_segment(const Ring& ring, int a, int b) {
   return Segment(get_point(ring, a), get_point(ring, b));
 }
@@ -153,6 +164,8 @@ Polygon rotate(const Polygon& poly, long double ang, Point org) {
 Polygon inverse(const Polygon& poly) {
   Polygon ret = poly;
   for (auto& p : ret.outer()) p = Point(-p.x(), p.y());
+  bg::correct(ret);
+
   return ret;
 }
 

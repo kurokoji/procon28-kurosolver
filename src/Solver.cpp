@@ -45,7 +45,18 @@ Solver::Solver(const std::vector<Piece>& pieces, const Polygon& frame) : pieces(
       minimumAngle = std::min(minimumAngle, get_corner(piece.poly, i));
     }
   }
-  for (auto&& piece : rotatePieces[0]) std::cerr << piece << std::endl;
+  orliv::misc::PostScript rotatepiece("rotate.ps");
+  for (size_t i = 0; i < rotatePieces.size(); ++i) {
+    rotatepiece.random_color();
+    for (auto&& piece : rotatePieces[i]) {
+      auto po = translate(piece.poly, 50, 50);
+      rotatepiece.path(po.outer());
+      rotatepiece.fill();
+      rotatepiece.color(0, 0, 0);
+      rotatepiece.text(10, 10, po.outer().size()," ", i);
+      rotatepiece.render();
+    }
+  }
   std::cerr << minimumAngle << std::endl;
 }
 
@@ -199,6 +210,7 @@ void Solver::solveChokudaiSearch(const State& ini, const size_t maxTime) const {
           best = v;
           best->write(dbg, t + 1);
           util::log("Step...", t + 1);
+          if (ma >= N) goto END;
         }
         auto&& nextCornerState = v->state.getNextCornerPriSegState(rotatePieces, minimumAngle);
         for (auto&& sta : nextCornerState) {
@@ -207,6 +219,9 @@ void Solver::solveChokudaiSearch(const State& ini, const size_t maxTime) const {
       }
     }
   }
+
+END:
+  best->write(dbg, "po");
   best->pieceAnswer(std::cout);
   printFrame(frame, std::cout);
 }
@@ -282,12 +297,14 @@ bool Solver::canRotate(Piece& piece, const long double angle, const Point& org) 
 // 合同かどうか
 bool Solver::isCongruent(const Piece& lhs, const Piece& rhs) const {
   if (lhs.outer().size() != rhs.outer().size()) return false;
+  auto r = rhs.poly;
+  bg::correct(r);
   const size_t N = lhs.outer().size() - 1;
   for (size_t i = 0; i < N; ++i) {
     const Point p = rhs.outer().front() - lhs.outer()[i];
     Polygon g = translate(lhs.poly, p);
     bg::correct(g);
-    if (bg::equals(g, rhs.poly)) return true;
+    if (bg::equals(g, r)) return true;
   }
 
   return false;

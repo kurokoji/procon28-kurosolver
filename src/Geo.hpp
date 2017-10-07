@@ -30,6 +30,8 @@ const Point operator-(const Point&, const Point&);
 
 Point get_point(const Ring&, int);
 Point get_point(const Polygon&, int);
+Point get_point(const Segment&, int);
+Segment inv_segment(const Segment&);
 Segment get_segment(const Ring&, int, int);
 Segment get_segment(const Polygon&, int, int);
 Segment get_segment(const Ring&, int);

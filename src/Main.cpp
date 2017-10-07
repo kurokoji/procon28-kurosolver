@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
   Polygon frame = to_frame(holes);
 
   std::sort(std::begin(pieces), std::end(pieces), [&](const Piece& lhs, const Piece& rhs) {
-    return lhs.area < rhs.area;
+    return lhs.area > rhs.area;
   });
   State init(frame);
   Solver solver(pieces, frame);

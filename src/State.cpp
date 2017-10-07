@@ -37,7 +37,7 @@ std::tuple<bool, Polygon> State::fitCorner(const Ring& hole, int a, const Polygo
   long double ha = get_corner(hole, a);
   long double pa = get_corner(piece, b);
   Segment&& hs = get_segment(hole, a);
-  Segment&& ps = get_segment(piece, b);
+  Segment&& ps = inv_segment(get_segment(piece, b - 1));
   // 角度が合ってなければだめ
   if (EPS < std::abs(get_angle(hs) - get_angle(ps))) return std::make_tuple(false, Polygon());
   if (EPS < std::abs(ha - pa)) return std::make_tuple(false, Polygon());
@@ -94,8 +94,8 @@ ScoreType State::convexHullEval(const Polygon& newFrame) const {
 ScoreType State::fitSegEval(const Polygon& piece, size_t holeN, int f, int p) const {
   const Ring& hole = frame.inners()[holeN];
   ScoreType sum = 0.0;
-  Segment a = get_segment(hole, f), b = get_segment(piece, p), c = get_segment(hole, f - 1),
-          d = get_segment(piece, p - 1);
+  Segment a = get_segment(hole, f), b = inv_segment(get_segment(piece, p - 1)), c = get_segment(hole, f - 1),
+          d = inv_segment(get_segment(piece, p - 2));
   sum += bg::equals(a, b);
   sum += bg::equals(c, d);
   return sum;
