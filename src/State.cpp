@@ -204,7 +204,8 @@ std::vector<State> State::getNextCornerPriSegState(const std::vector<std::vector
             if (!canPut(tr)) continue;
             Polygon nextFrame = newFrame(tr);
             if (!canUseFrame(nextFrame, minimumAngle)) continue;
-            ret.emplace_back(nextFrame, tr, used | (1ull << id), fitSegEval(tr, i, h, p));
+            ret.emplace_back(nextFrame, tr, used | (1ull << id), convexHullEval(nextFrame));
+            // ret.emplace_back(nextFrame, tr, used | (1ull << id), fitSegEval(tr, i, h, p));
           }
         }
       }

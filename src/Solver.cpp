@@ -191,7 +191,7 @@ void Solver::solveChokudaiSearch(const State& ini, const size_t maxTime) const {
   using context_ptr = std::shared_ptr<Context>;
   const size_t N = pieces.size();
 
-  std::vector<Heap<context_ptr>> heap(N + 1);
+  std::vector<minHeap<context_ptr>> heap(N + 1);
   auto best = std::make_shared<Context>(ini);
   heap[0].emplace(best);
   size_t ma = 0;
