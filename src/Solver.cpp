@@ -210,11 +210,15 @@ void Solver::solveChokudaiSearch(const State& ini, const size_t maxTime) const {
           best = v;
           best->write(dbg, t + 1);
           util::log("Step...", t + 1);
-          if (ma >= N) goto END;
         }
         auto&& nextCornerState = v->state.getNextCornerPriSegState(rotatePieces, minimumAngle);
         for (auto&& sta : nextCornerState) {
           heap[t + 1].emplace(std::make_shared<Context>(sta, v));
+        }
+        if (t + 1 >= N) {
+          ma = t + 1;
+          best = heap[t + 1].top();
+          goto END;
         }
       }
     }

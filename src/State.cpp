@@ -67,7 +67,7 @@ bool State::canPut(const Polygon& piece) const {
 }
 
 bool State::canUseFrame(const Polygon& nextFrame, long double minimumAngle) const {
-  if (nextFrame.inners().size() != 1) return false;
+  if (nextFrame.inners().size() > frame.inners().size()) return false;
   for (auto&& hole : nextFrame.inners()) {
     for (size_t i = 0; i < hole.size() - 1; ++i) {
       auto&& cor = get_corner(hole, i);
