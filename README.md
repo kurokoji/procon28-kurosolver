@@ -25,7 +25,7 @@ waf 1.9.4
 
 ## 実行方法
 
-`make` でビルドした後 `./build/solver` で実行
+`make` でビルドした後 `./build/solver` で実行
 
 # License
 
